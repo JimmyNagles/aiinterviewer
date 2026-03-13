@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Interview Coach</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#1a1210;--bg-card:rgba(255,255,255,.04);--bg-card-hover:rgba(255,255,255,.07);
+  --glass:rgba(255,255,255,.05);--glass-border:rgba(255,255,255,.08);
+  --border:rgba(255,255,255,.08);--border-light:rgba(255,255,255,.14);
+  --text:#f5f0eb;--text-sec:#a8a099;--text-dim:#6b6460;
+  --accent:#eab308;--accent2:#f59e0b;
+  --gradient:linear-gradient(135deg,#eab308,#f59e0b);
+  --green:#22c55e;--amber:#f59e0b;--red:#ef4444;
+  --radius:16px;--radius-sm:12px;
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  --transition:0.3s cubic-bezier(.4,0,.2,1);
+  --blur:blur(20px);
+}
+html{font-size:16px}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;line-height:1.6}
+a{color:var(--accent);text-decoration:none}
+
+/* ── Utility ── */
+.gradient-text{background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 32px;border:none;border-radius:var(--radius-sm);font:600 1rem var(--font);cursor:pointer;transition:var(--transition);outline:none;position:relative;overflow:hidden}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--gradient);color:#0a0a0f;box-shadow:0 4px 24px rgba(234,179,8,.35)}
+.btn-primary:hover{box-shadow:0 6px 32px rgba(234,179,8,.5);transform:translateY(-1px)}
+.btn-secondary{background:var(--glass);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);color:var(--text);border:1px solid var(--glass-border)}
+.btn-secondary:hover{background:var(--bg-card-hover);border-color:var(--border-light)}
+.btn-danger{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.25)}
+.btn-danger:hover{background:rgba(239,68,68,.2)}
+.btn-sm{padding:10px 20px;font-size:.875rem}
+.btn-lg{padding:18px 48px;font-size:1.125rem;border-radius:var(--radius)}
+.btn-icon{width:48px;height:48px;padding:0;border-radius:50%}
+
+/* ── Screens ── */
+.screen{display:none;animation:fadeIn .4s ease}
+.screen.active{display:flex;flex-direction:column}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Screen 1: Landing ── */
+#landing{align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:40px 20px;position:relative}
+.landing-bg{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.landing-bg::before{content:'';position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(234,179,8,.15),transparent 70%);top:-200px;right:-150px}
+.landing-bg::after{content:'';position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(245,158,11,.1),transparent 70%);bottom:-200px;left:-100px}
+.landing-content{position:relative;z-index:1;max-width:700px}
+.landing-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:20px;background:rgba(234,179,8,.08);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:1px solid rgba(234,179,8,.2);font-size:.8rem;color:var(--accent);margin-bottom:28px;font-weight:500}
+.landing-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse-dot 2s infinite}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.4}}
+.landing-content h1{font-size:clamp(2.5rem,6vw,4rem);font-weight:800;letter-spacing:-.03em;line-height:1.1;margin-bottom:18px}
+.landing-content .subtitle{font-size:clamp(1rem,2.5vw,1.25rem);color:var(--text-sec);max-width:540px;margin:0 auto 48px}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:48px;text-align:left}
+.step{background:var(--glass);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:1px solid var(--glass-border);border-radius:var(--radius);padding:24px;transition:var(--transition)}
+.step:hover{border-color:var(--border-light);transform:translateY(-2px);background:var(--bg-card-hover)}
+.step-num{width:36px;height:36px;border-radius:10px;background:var(--gradient);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;margin-bottom:14px}
+.step h3{font-size:.95rem;margin-bottom:6px;font-weight:600}
+.step p{font-size:.82rem;color:var(--text-sec);line-height:1.5}
+
+/* ── Screen 2: Form ── */
+#setup{align-items:center;justify-content:center;min-height:100vh;padding:40px 20px}
+.form-container{width:100%;max-width:560px}
+.form-header{margin-bottom:36px}
+.form-header h2{font-size:1.8rem;font-weight:700;margin-bottom:6px}
+.form-header p{color:var(--text-sec);font-size:.95rem}
+.form-group{margin-bottom:20px}
+.form-group label{display:block;font-size:.85rem;font-weight:500;margin-bottom:7px;color:var(--text-sec)}
+.form-group label .req{color:var(--accent)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+input[type="text"],select,textarea{width:100%;padding:13px 16px;background:var(--glass);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:1px solid var(--glass-border);border-radius:var(--radius-sm);color:var(--text);font:400 .95rem var(--font);transition:var(--transition);outline:none}
+input[type="text"]:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(234,179,8,.15)}
+select{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%239090a8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
+select option{background:var(--bg-card);color:var(--text)}
+textarea{resize:vertical;min-height:80px}
+.form-actions{display:flex;gap:12px;margin-top:32px}
+.form-actions .btn{flex:1}
+
+/* ── Screen 3: Interview ── */
+#interview{height:100vh;overflow:hidden}
+.interview-topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;background:var(--glass);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border-bottom:1px solid var(--glass-border);flex-shrink:0}
+.topbar-info{display:flex;align-items:center;gap:12px}
+.topbar-info .company-badge{padding:4px 12px;border-radius:6px;background:rgba(234,179,8,.12);color:var(--accent);font-size:.8rem;font-weight:600}
+.topbar-info .job-title{font-weight:500;font-size:.9rem}
+.topbar-right{display:flex;align-items:center;gap:16px}
+.timer{font-family:'SF Mono',Monaco,Consolas,monospace;font-size:.9rem;color:var(--text-sec);background:var(--glass);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);padding:6px 14px;border-radius:8px;border:1px solid var(--glass-border);min-width:72px;text-align:center}
+.interview-main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.ai-visual{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px 16px;flex-shrink:0}
+
+/* Waveform */
+.waveform{display:flex;align-items:center;gap:4px;height:60px;margin-bottom:14px}
+.waveform .bar{width:4px;border-radius:4px;background:var(--gradient);transition:height .15s ease}
+.waveform.active .bar{animation:wave 1.2s ease-in-out infinite}
+.waveform.idle .bar{height:6px !important;opacity:.3}
+@keyframes wave{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
+.waveform .bar:nth-child(1){height:20px;animation-delay:0s}
+.waveform .bar:nth-child(2){height:35px;animation-delay:.1s}
+.waveform .bar:nth-child(3){height:50px;animation-delay:.2s}
+.waveform .bar:nth-child(4){height:40px;animation-delay:.3s}
+.waveform .bar:nth-child(5){height:55px;animation-delay:.15s}
+.waveform .bar:nth-child(6){height:30px;animation-delay:.25s}
+.waveform .bar:nth-child(7){height:45px;animation-delay:.05s}
+.waveform .bar:nth-child(8){height:25px;animation-delay:.35s}
+.waveform .bar:nth-child(9){height:50px;animation-delay:.2s}
+.waveform .bar:nth-child(10){height:35px;animation-delay:.1s}
+.waveform .bar:nth-child(11){height:20px;animation-delay:.3s}
+
+.status-text{font-size:.9rem;color:var(--text-sec);font-weight:500;min-height:24px}
+.status-text.speaking{color:var(--accent)}
+.status-text.listening{color:var(--green)}
+
+/* Transcript */
+.transcript-panel{flex:1;overflow-y:auto;padding:0 24px 16px;scroll-behavior:smooth}
+.transcript-panel::-webkit-scrollbar{width:4px}
+.transcript-panel::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.transcript-msg{display:flex;gap:12px;margin-bottom:16px;animation:msgIn .3s ease}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.transcript-msg .role{flex-shrink:0;width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;text-transform:uppercase}
+.transcript-msg.interviewer .role{background:rgba(234,179,8,.15);color:var(--accent)}
+.transcript-msg.user .role{background:rgba(34,197,94,.12);color:var(--green)}
+.transcript-msg .msg-content{flex:1}
+.transcript-msg .msg-role-name{font-size:.75rem;font-weight:600;margin-bottom:3px;color:var(--text-sec)}
+.transcript-msg .msg-text{font-size:.92rem;line-height:1.6;color:var(--text)}
+.transcript-msg.user .msg-text{color:rgba(240,240,245,.85)}
+
+/* Interview config bar */
+.interview-config{display:flex;align-items:center;gap:10px;padding:8px 24px;background:rgba(234,179,8,.06);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
+.config-tag{padding:3px 10px;border-radius:6px;font-size:.75rem;font-weight:500;background:var(--glass);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:1px solid var(--glass-border);color:var(--text-sec)}
+
+/* Mic level meter */
+.mic-level-wrap{display:flex;align-items:center;gap:3px;height:36px;margin:0 8px}
+.mic-level-wrap .lvl-bar{width:3px;border-radius:2px;background:var(--green);transition:height .05s linear;height:4px}
+.mic-level-wrap.hidden{visibility:hidden}
+
+/* Bottom controls */
+.interview-controls{display:flex;align-items:center;justify-content:center;gap:20px;padding:20px 24px 28px;flex-shrink:0;background:linear-gradient(to top,var(--bg) 60%,transparent)}
+.mic-btn{width:72px;height:72px;border-radius:50%;border:none;background:var(--gradient);color:#0a0a0f;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--transition);box-shadow:0 4px 24px rgba(234,179,8,.3);position:relative}
+.mic-btn:hover{box-shadow:0 6px 32px rgba(234,179,8,.5);transform:scale(1.05)}
+.mic-btn:active,.mic-btn.recording{transform:scale(.95);box-shadow:0 0 0 6px rgba(234,179,8,.2),0 4px 24px rgba(234,179,8,.3)}
+.mic-btn.recording{background:linear-gradient(135deg,var(--red),#dc2626);box-shadow:0 0 0 6px rgba(239,68,68,.2),0 4px 24px rgba(239,68,68,.3);animation:mic-pulse 1.5s ease infinite}
+@keyframes mic-pulse{0%,100%{box-shadow:0 0 0 6px rgba(239,68,68,.2),0 4px 24px rgba(239,68,68,.3)}50%{box-shadow:0 0 0 12px rgba(239,68,68,.1),0 4px 32px rgba(239,68,68,.4)}}
+.mic-btn svg{width:28px;height:28px}
+.mic-hint{width:48px;text-align:center;font-size:.75rem;color:var(--text-dim)}
+
+/* ── Screen 4: Feedback ── */
+#feedback{min-height:100vh;padding:40px 20px;align-items:center}
+.feedback-container{width:100%;max-width:720px}
+.feedback-header{text-align:center;margin-bottom:40px}
+.feedback-header h2{font-size:1.8rem;font-weight:700;margin-bottom:6px}
+.feedback-header p{color:var(--text-sec)}
+
+.overall-score{display:flex;align-items:center;justify-content:center;margin-bottom:40px}
+.score-ring{position:relative;width:160px;height:160px}
+.score-ring svg{width:160px;height:160px;transform:rotate(-90deg)}
+.score-ring .ring-bg{fill:none;stroke:var(--border);stroke-width:10}
+.score-ring .ring-fg{fill:none;stroke:url(#scoreGrad);stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset 1.5s ease}
+.score-ring .score-val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.score-ring .score-num{font-size:2.8rem;font-weight:800;line-height:1}
+.score-ring .score-label{font-size:.8rem;color:var(--text-sec);margin-top:4px}
+
+.category-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:36px}
+.cat-card{background:var(--glass);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:1px solid var(--glass-border);border-radius:var(--radius);padding:20px}
+.cat-card .cat-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.cat-card .cat-name{font-weight:600;font-size:.9rem}
+.cat-card .cat-score{font-weight:700;font-size:1.1rem}
+.cat-bar{height:6px;border-radius:3px;background:var(--border);overflow:hidden}
+.cat-bar .cat-fill{height:100%;border-radius:3px;transition:width 1.2s ease;background:var(--gradient)}
+.cat-bar .cat-fill.good{background:var(--green)}
+.cat-bar .cat-fill.ok{background:var(--amber)}
+.cat-bar .cat-fill.low{background:var(--red)}
+
+.feedback-section{margin-bottom:28px}
+.feedback-section h3{font-size:1.05rem;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.feedback-section h3 .icon{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.strength-list,.improve-list{list-style:none;display:flex;flex-direction:column;gap:8px}
+.strength-list li,.improve-list li{padding:12px 16px;border-radius:var(--radius-sm);font-size:.9rem;line-height:1.5}
+.strength-list li{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.15);color:rgba(34,197,94,.9)}
+.improve-list li{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.15);color:rgba(245,158,11,.9)}
+
+.quote-cards{display:flex;flex-direction:column;gap:14px}
+.quote-card{background:var(--glass);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:1px solid var(--glass-border);border-radius:var(--radius);padding:18px;transition:var(--transition)}
+.quote-card:hover{border-color:var(--border-light)}
+.quote-card .quote-said{font-size:.88rem;color:var(--text-sec);margin-bottom:10px;padding-left:12px;border-left:2px solid var(--border-light)}
+.quote-card .quote-suggestion{font-size:.88rem;color:var(--accent);display:flex;gap:6px}
+.quote-card .quote-suggestion::before{content:'Tip:';font-weight:600;flex-shrink:0}
+
+.feedback-actions{display:flex;gap:12px;margin-top:36px;justify-content:center}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--glass);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:1px solid var(--glass-border);padding:12px 24px;border-radius:var(--radius-sm);font-size:.88rem;color:var(--text);opacity:0;transition:var(--transition);z-index:999;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+/* ── Responsive ── */
+@media(max-width:640px){
+  .steps{grid-template-columns:1fr;gap:12px}
+  .form-row{grid-template-columns:1fr}
+  .category-grid{grid-template-columns:1fr}
+  .interview-topbar{padding:10px 16px}
+  .transcript-panel{padding:0 16px 12px}
+  .interview-controls{padding:16px 16px 24px}
+  .mic-btn{width:64px;height:64px}
+  .feedback-actions{flex-direction:column}
+  .feedback-actions .btn{width:100%}
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════ SCREEN 1: LANDING ════════════════════ -->
+<div id="landing" class="screen active">
+  <div class="landing-bg"></div>
+  <div class="landing-content">
+    <div class="landing-badge"><span class="dot"></span> AI-Powered Practice</div>
+    <h1><span class="gradient-text">AI Interview</span> Coach</h1>
+    <p class="subtitle">Practice interviews with an AI that listens, responds, and gives real feedback</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3>Enter Details</h3>
+        <p>Tell us the role, company, and interview type you want to practice for.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3>Practice Live</h3>
+        <p>Have a realistic conversation with our AI interviewer using your microphone.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3>Get Feedback</h3>
+        <p>Receive detailed scores, strengths, and actionable improvement tips.</p>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-lg" onclick="showScreen('setup')">Start Practice Interview</button>
+  </div>
+</div>
+
+<!-- ════════════════════ SCREEN 2: SETUP ════════════════════ -->
+<div id="setup" class="screen">
+  <div class="form-container">
+    <div class="form-header">
+      <h2>Set Up Your Interview</h2>
+      <p>Customize your practice session</p>
+    </div>
+    <form id="setupForm" onsubmit="return startInterview(event)">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Job Title <span class="req">*</span></label>
+          <input type="text" id="jobTitle" placeholder="e.g. Software Engineer" required>
+        </div>
+        <div class="form-group">
+          <label>Company Name <span class="req">*</span></label>
+          <input type="text" id="companyName" placeholder="e.g. Google" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Interview Type</label>
+          <select id="interviewType">
+            <option value="behavioral">Behavioral</option>
+            <option value="technical">Technical</option>
+            <option value="case_study">Case Study</option>
+            <option value="system_design">System Design</option>
+            <option value="general">General</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Experience Level</label>
+          <select id="experienceLevel">
+            <option value="entry">Entry Level</option>
+            <option value="mid">Mid Level</option>
+            <option value="senior">Senior</option>
+            <option value="executive">Executive</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Focus Areas <span style="color:var(--text-dim);font-weight:400">(optional)</span></label>
+        <textarea id="focusAreas" placeholder="Any specific topics or skills you want to practice?"></textarea>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" onclick="showScreen('landing')">Back</button>
+        <button type="submit" class="btn btn-primary" id="beginBtn">Begin Interview</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ════════════════════ SCREEN 3: INTERVIEW ════════════════════ -->
+<div id="interview" class="screen">
+  <div class="interview-topbar">
+    <div class="topbar-info">
+      <span class="company-badge" id="topCompany">Google</span>
+      <span class="job-title" id="topJob">Software Engineer</span>
+    </div>
+    <div class="topbar-right">
+      <span class="timer" id="timer">00:00</span>
+      <button class="btn btn-danger btn-sm" onclick="endInterview()">End Interview</button>
+    </div>
+  </div>
+  <div class="interview-config" id="interviewConfig"></div>
+  <div class="interview-main">
+    <div class="ai-visual">
+      <div class="waveform idle" id="waveform">
+        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+        <div class="bar"></div><div class="bar"></div>
+      </div>
+      <div class="status-text" id="statusText">Connecting...</div>
+    </div>
+    <div class="transcript-panel" id="transcript"></div>
+  </div>
+  <div class="interview-controls">
+    <button class="btn btn-secondary btn-sm" onclick="endInterview()" style="border-radius:50%;width:48px;height:48px;padding:0" title="End">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+    </button>
+    <div class="mic-level-wrap hidden" id="micLevel">
+      <div class="lvl-bar"></div><div class="lvl-bar"></div><div class="lvl-bar"></div>
+      <div class="lvl-bar"></div><div class="lvl-bar"></div>
+    </div>
+    <button class="mic-btn" id="micBtn" onmousedown="startRecording()" onmouseup="stopRecording()" ontouchstart="startRecording()" ontouchend="stopRecording()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+    </button>
+    <span class="mic-hint">Hold to talk</span>
+  </div>
+</div>
+
+<!-- ════════════════════ SCREEN 4: FEEDBACK ════════════════════ -->
+<div id="feedback" class="screen">
+  <div class="feedback-container">
+    <div class="feedback-header">
+      <h2>Interview Complete</h2>
+      <p>Here's how you did</p>
+    </div>
+
+    <div class="overall-score">
+      <div class="score-ring">
+        <svg viewBox="0 0 160 160">
+          <defs>
+            <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#eab308"/>
+              <stop offset="100%" stop-color="#f59e0b"/>
+            </linearGradient>
+          </defs>
+          <circle class="ring-bg" cx="80" cy="80" r="68"/>
+          <circle class="ring-fg" id="scoreRing" cx="80" cy="80" r="68" stroke-dasharray="427.26" stroke-dashoffset="427.26"/>
+        </svg>
+        <div class="score-val">
+          <span class="score-num gradient-text" id="overallScore">0</span>
+          <span class="score-label">out of 10</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="category-grid" id="categoryGrid"></div>
+
+    <div class="feedback-section" id="strengthsSection" style="display:none">
+      <h3><span class="icon" style="background:var(--green)"></span> Strengths</h3>
+      <ul class="strength-list" id="strengthsList"></ul>
+    </div>
+
+    <div class="feedback-section" id="improvementsSection" style="display:none">
+      <h3><span class="icon" style="background:var(--amber)"></span> Areas for Improvement</h3>
+      <ul class="improve-list" id="improvementsList"></ul>
+    </div>
+
+    <div class="feedback-section" id="quotesSection" style="display:none">
+      <h3><span class="icon" style="background:var(--accent)"></span> Specific Feedback</h3>
+      <div class="quote-cards" id="quoteCards"></div>
+    </div>
+
+    <div class="feedback-section" id="actionPlanSection" style="display:none">
+      <h3><span class="icon" style="background:var(--accent2)"></span> Action Plan</h3>
+      <ul class="improve-list" id="actionPlanList" style="border-color:rgba(245,158,11,.15)"></ul>
+    </div>
+
+    <div class="feedback-section" id="summarySection" style="display:none">
+      <div id="summaryText" style="background:var(--glass);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:1px solid var(--glass-border);border-radius:var(--radius);padding:20px;font-size:.92rem;line-height:1.7;color:var(--text-sec)"></div>
+    </div>
+
+    <div class="feedback-actions">
+      <button class="btn btn-primary" onclick="resetApp()">Practice Again</button>
+      <button class="btn btn-secondary" onclick="shareResults()">Share Results</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════ STATE ═══════════════════
+let sessionId = null;
+let ws = null;
+let audioCtx = null;
+let micStream = null;
+let micProcessor = null;
+let micSource = null;
+let isRecording = false;
+let timerInterval = null;
+let elapsedSeconds = 0;
+let audioQueue = [];
+let isPlayingAudio = false;
+let currentSourceNode = null;
+let feedbackData = null;
+let micAnalyser = null;
+let micLevelRAF = null;
+let currentInterviewerMsgEl = null; // for progressive text append
+let interviewPayload = null;
+
+// ═══════════════════ NAVIGATION ═══════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ═══════════════════ TOAST ═══════════════════
+function showToast(msg, duration = 2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ═══════════════════ START INTERVIEW ═══════════════════
+async function startInterview(e) {
+  e.preventDefault();
+  const btn = document.getElementById('beginBtn');
+  btn.textContent = 'Starting...';
+  btn.disabled = true;
+
+  const focusRaw = document.getElementById('focusAreas').value.trim();
+  const payload = {
+    job_title: document.getElementById('jobTitle').value.trim(),
+    company: document.getElementById('companyName').value.trim(),
+    interview_type: document.getElementById('interviewType').value,
+    experience_level: document.getElementById('experienceLevel').value,
+    focus_areas: focusRaw ? focusRaw.split(',').map(s => s.trim()).filter(Boolean) : null
+  };
+
+  try {
+    const res = await fetch('/api/start-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('Failed to create session');
+    const data = await res.json();
+    sessionId = data.session_id;
+
+    interviewPayload = payload;
+    document.getElementById('topCompany').textContent = payload.company;
+    document.getElementById('topJob').textContent = payload.job_title;
+    document.getElementById('transcript').innerHTML = '';
+
+    // Show interview config tags
+    const typeLabels = {behavioral:'Behavioral',technical:'Technical',case_study:'Case Study',system_design:'System Design',general:'General'};
+    const lvlLabels = {entry:'Entry Level',mid:'Mid Level',senior:'Senior',executive:'Executive'};
+    const configEl = document.getElementById('interviewConfig');
+    configEl.innerHTML =
+      `<span class="config-tag">${typeLabels[payload.interview_type]||payload.interview_type}</span>` +
+      `<span class="config-tag">${lvlLabels[payload.experience_level]||payload.experience_level}</span>` +
+      (payload.focus_areas ? payload.focus_areas.map(a => `<span class="config-tag">${escapeHtml(a)}</span>`).join('') : '');
+
+    showScreen('interview');
+    startTimer();
+    connectWebSocket();
+    initAudio();
+  } catch (err) {
+    showToast('Error: ' + err.message);
+  } finally {
+    btn.textContent = 'Begin Interview';
+    btn.disabled = false;
+  }
+}
+
+// ═══════════════════ TIMER ═══════════════════
+function startTimer() {
+  elapsedSeconds = 0;
+  updateTimerDisplay();
+  timerInterval = setInterval(() => { elapsedSeconds++; updateTimerDisplay(); }, 1000);
+}
+function stopTimer() { clearInterval(timerInterval); }
+function updateTimerDisplay() {
+  const m = String(Math.floor(elapsedSeconds / 60)).padStart(2, '0');
+  const s = String(elapsedSeconds % 60).padStart(2, '0');
+  document.getElementById('timer').textContent = m + ':' + s;
+}
+
+// ═══════════════════ AUDIO CONTEXT ═══════════════════
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+// ═══════════════════ WEBSOCKET ═══════════════════
+function connectWebSocket() {
+  const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${protocol}://${location.host}/ws/interview/${sessionId}`);
+  ws.binaryType = 'arraybuffer';
+
+  setStatus('Connecting...', '');
+
+  ws.onopen = () => {
+    setStatus('AI is preparing your first question...', 'speaking');
+  };
+
+  ws.onmessage = (event) => {
+    if (event.data instanceof ArrayBuffer) {
+      handleAudioData(event.data);
+    } else {
+      try {
+        const msg = JSON.parse(event.data);
+        handleServerMessage(msg);
+      } catch (e) {
+        console.error('Bad JSON from server:', e);
+      }
+    }
+  };
+
+  ws.onclose = () => {
+    setStatus('Connection closed', '');
+  };
+
+  ws.onerror = () => {
+    setStatus('Connection error', '');
+    showToast('WebSocket connection error');
+  };
+}
+
+function handleServerMessage(msg) {
+  switch (msg.type) {
+    case 'interviewer_text':
+      // Progressive: append sentence to current interviewer bubble
+      appendInterviewerText(msg.text || msg.content);
+      break;
+    case 'transcript':
+      addTranscript('user', msg.text || msg.content);
+      break;
+    case 'audio_end':
+      currentInterviewerMsgEl = null; // next interviewer_text starts a new bubble
+      onAIFinishedSending();
+      break;
+    case 'processing':
+      if (msg.text) setStatus(msg.text, '');
+      break;
+    case 'session_ended':
+      // Auto-transition to feedback when AI ends the interview
+      autoEndInterview();
+      break;
+    case 'error':
+      showToast('Error: ' + (msg.message || msg.text));
+      break;
+    default:
+      console.log('Unknown message type:', msg.type, msg);
+  }
+}
+
+// ═══════════════════ AUDIO PLAYBACK ═══════════════════
+function handleAudioData(arrayBuffer) {
+  setWaveform(true);
+  setStatus('AI is speaking...', 'speaking');
+
+  // Decode Int16 PCM to Float32
+  const int16 = new Int16Array(arrayBuffer);
+  const float32 = new Float32Array(int16.length);
+  for (let i = 0; i < int16.length; i++) {
+    float32[i] = int16[i] / 32768;
+  }
+
+  // Queue the buffer
+  const buffer = audioCtx.createBuffer(1, float32.length, 24000);
+  buffer.getChannelData(0).set(float32);
+  audioQueue.push(buffer);
+
+  if (!isPlayingAudio) {
+    playNextAudio();
+  }
+}
+
+function playNextAudio() {
+  if (audioQueue.length === 0) {
+    isPlayingAudio = false;
+    // Don't set idle yet; wait for audio_end
+    return;
+  }
+  isPlayingAudio = true;
+  const buffer = audioQueue.shift();
+  const source = audioCtx.createBufferSource();
+  source.buffer = buffer;
+  source.connect(audioCtx.destination);
+  currentSourceNode = source;
+  source.onended = () => {
+    currentSourceNode = null;
+    playNextAudio();
+  };
+  source.start();
+}
+
+function onAIFinishedSending() {
+  // Wait for all queued audio to finish, then set idle
+  const check = () => {
+    if (!isPlayingAudio && audioQueue.length === 0) {
+      setWaveform(false);
+      setStatus('Your turn \u2014 hold to speak', 'listening');
+    } else {
+      setTimeout(check, 200);
+    }
+  };
+  check();
+}
+
+// ═══════════════════ MIC RECORDING ═══════════════════
+async function startRecording() {
+  if (isRecording) return;
+  initAudio();
+  isRecording = true;
+  document.getElementById('micBtn').classList.add('recording');
+  setStatus('Listening...', 'listening');
+
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: { sampleRate: 16000, channelCount: 1, echoCancellation: true, noiseSuppression: true } });
+    const micCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+    micSource = micCtx.createMediaStreamSource(micStream);
+
+    // Analyser for live mic level
+    micAnalyser = micCtx.createAnalyser();
+    micAnalyser.fftSize = 256;
+    micSource.connect(micAnalyser);
+    showMicLevel(true);
+    updateMicLevel();
+
+    // Use ScriptProcessor for broad compatibility
+    micProcessor = micCtx.createScriptProcessor(4096, 1, 1);
+    micProcessor.onaudioprocess = (e) => {
+      if (!isRecording || !ws || ws.readyState !== WebSocket.OPEN) return;
+      const float32 = e.inputBuffer.getChannelData(0);
+      const int16 = new Int16Array(float32.length);
+      for (let i = 0; i < float32.length; i++) {
+        let s = Math.max(-1, Math.min(1, float32[i]));
+        int16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+      }
+      ws.send(int16.buffer);
+    };
+
+    micSource.connect(micProcessor);
+    micProcessor.connect(micCtx.destination);
+    micProcessor._micCtx = micCtx;
+  } catch (err) {
+    showToast('Microphone access denied');
+    isRecording = false;
+    document.getElementById('micBtn').classList.remove('recording');
+    setStatus('Your turn — hold to speak', 'listening');
+  }
+}
+
+function stopRecording() {
+  if (!isRecording) return;
+  isRecording = false;
+  document.getElementById('micBtn').classList.remove('recording');
+  setStatus('Processing your answer...', '');
+  showMicLevel(false);
+
+  if (micLevelRAF) { cancelAnimationFrame(micLevelRAF); micLevelRAF = null; }
+  micAnalyser = null;
+
+  if (micProcessor) {
+    micProcessor.disconnect();
+    if (micProcessor._micCtx) micProcessor._micCtx.close();
+    micProcessor = null;
+  }
+  if (micSource) { micSource.disconnect(); micSource = null; }
+  if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'end_of_speech' }));
+  }
+}
+
+// ═══════════════════ MIC LEVEL METER ═══════════════════
+function showMicLevel(show) {
+  document.getElementById('micLevel').classList.toggle('hidden', !show);
+}
+
+function updateMicLevel() {
+  if (!micAnalyser || !isRecording) return;
+  const data = new Uint8Array(micAnalyser.frequencyBinCount);
+  micAnalyser.getByteFrequencyData(data);
+  // Get average volume
+  let sum = 0;
+  for (let i = 0; i < data.length; i++) sum += data[i];
+  const avg = sum / data.length; // 0-255
+  const norm = Math.min(avg / 80, 1); // normalize, 80 is a good "loud" threshold
+
+  const bars = document.querySelectorAll('#micLevel .lvl-bar');
+  const barCount = bars.length;
+  bars.forEach((bar, i) => {
+    // Each bar lights up at a different threshold
+    const threshold = (i + 1) / barCount;
+    const h = norm >= threshold ? 4 + (norm - threshold) * 28 : 4;
+    bar.style.height = h + 'px';
+    bar.style.background = norm >= threshold ? (i >= barCount - 1 ? 'var(--red)' : 'var(--green)') : 'var(--border)';
+  });
+
+  micLevelRAF = requestAnimationFrame(updateMicLevel);
+}
+
+// ═══════════════════ TRANSCRIPT ═══════════════════
+function addTranscript(role, text) {
+  const panel = document.getElementById('transcript');
+  const div = document.createElement('div');
+  div.className = 'transcript-msg ' + (role === 'interviewer' ? 'interviewer' : 'user');
+  const label = role === 'interviewer' ? 'AI' : 'You';
+  const roleName = role === 'interviewer' ? 'Interviewer' : 'You';
+  div.innerHTML = `
+    <div class="role">${label}</div>
+    <div class="msg-content">
+      <div class="msg-role-name">${roleName}</div>
+      <div class="msg-text">${escapeHtml(text)}</div>
+    </div>`;
+  panel.appendChild(div);
+  panel.scrollTop = panel.scrollHeight;
+  return div;
+}
+
+function appendInterviewerText(text) {
+  if (currentInterviewerMsgEl) {
+    // Append to existing bubble
+    const msgText = currentInterviewerMsgEl.querySelector('.msg-text');
+    msgText.textContent += ' ' + text;
+  } else {
+    // Create new bubble
+    currentInterviewerMsgEl = addTranscript('interviewer', text);
+  }
+  const panel = document.getElementById('transcript');
+  panel.scrollTop = panel.scrollHeight;
+}
+
+function escapeHtml(t) {
+  const d = document.createElement('div');
+  d.textContent = t;
+  return d.innerHTML;
+}
+
+// ═══════════════════ STATUS / WAVEFORM ═══════════════════
+function setStatus(text, mode) {
+  const el = document.getElementById('statusText');
+  el.textContent = text;
+  el.className = 'status-text' + (mode ? ' ' + mode : '');
+}
+
+function setWaveform(active) {
+  const wf = document.getElementById('waveform');
+  wf.className = 'waveform ' + (active ? 'active' : 'idle');
+}
+
+// ═══════════════════ END INTERVIEW ═══════════════════
+async function endInterview() {
+  stopTimer();
+  stopRecording();
+
+  // Stop any playing audio immediately
+  if (currentSourceNode) { try { currentSourceNode.stop(); } catch(e){} }
+  audioQueue = [];
+  isPlayingAudio = false;
+
+  // Send end signal and close WebSocket right away
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    try { ws.send(JSON.stringify({ type: 'end_session' })); } catch(e){}
+    ws.close();
+  }
+  ws = null;
+
+  setStatus('Interview ended — generating feedback...', '');
+  await fetchAndShowFeedback();
+}
+
+async function autoEndInterview() {
+  // Called when server sends session_ended (AI naturally concluded)
+  // Wait for any remaining audio to finish playing
+  await new Promise(resolve => {
+    const check = () => {
+      if (!isPlayingAudio && audioQueue.length === 0) resolve();
+      else setTimeout(check, 200);
+    };
+    check();
+  });
+
+  stopTimer();
+  stopRecording();
+
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.close();
+  }
+
+  setStatus('Interview complete — generating feedback...', '');
+  showToast('Generating your feedback...');
+  await fetchAndShowFeedback();
+}
+
+async function fetchAndShowFeedback() {
+  try {
+    const res = await fetch(`/api/feedback/${sessionId}`, { method: 'POST' });
+    if (!res.ok) throw new Error('Failed to get feedback');
+    feedbackData = await res.json();
+    renderFeedback(feedbackData);
+    showScreen('feedback');
+  } catch (err) {
+    showToast('Error getting feedback: ' + err.message);
+    renderFeedback(getPlaceholderFeedback());
+    showScreen('feedback');
+  }
+}
+
+// ═══════════════════ RENDER FEEDBACK ═══════════════════
+function renderFeedback(data) {
+  // Overall score
+  const score = data.overall_score || 0;
+  const circumference = 2 * Math.PI * 68; // ~427.26
+  const offset = circumference - (score / 10) * circumference;
+  const ring = document.getElementById('scoreRing');
+  setTimeout(() => { ring.style.strokeDashoffset = offset; }, 100);
+  document.getElementById('overallScore').textContent = score;
+
+  // Category scores — backend returns {clarity: 7, ...} object
+  const grid = document.getElementById('categoryGrid');
+  grid.innerHTML = '';
+  const rawCats = data.categories || {};
+  const cats = Array.isArray(rawCats) ? rawCats :
+    Object.entries(rawCats).map(([k, v]) => ({ name: k.charAt(0).toUpperCase() + k.slice(1), score: v }));
+  if (cats.length === 0) {
+    ['Clarity','Structure','Relevance','Confidence'].forEach(n => cats.push({name:n,score:0}));
+  }
+  cats.forEach(cat => {
+    const pct = (cat.score / 10) * 100;
+    const cls = pct >= 70 ? 'good' : pct >= 50 ? 'ok' : 'low';
+    grid.innerHTML += `
+      <div class="cat-card">
+        <div class="cat-header">
+          <span class="cat-name">${escapeHtml(cat.name)}</span>
+          <span class="cat-score">${cat.score}/10</span>
+        </div>
+        <div class="cat-bar"><div class="cat-fill ${cls}" style="width:${pct}%"></div></div>
+      </div>`;
+  });
+
+  // Strengths
+  const sSection = document.getElementById('strengthsSection');
+  const sList = document.getElementById('strengthsList');
+  sList.innerHTML = '';
+  if (data.strengths && data.strengths.length) {
+    sSection.style.display = 'block';
+    data.strengths.forEach(s => { sList.innerHTML += `<li>${escapeHtml(s)}</li>`; });
+  } else {
+    sSection.style.display = 'none';
+  }
+
+  // Improvements
+  const iSection = document.getElementById('improvementsSection');
+  const iList = document.getElementById('improvementsList');
+  iList.innerHTML = '';
+  if (data.improvements && data.improvements.length) {
+    iSection.style.display = 'block';
+    data.improvements.forEach(s => { iList.innerHTML += `<li>${escapeHtml(s)}</li>`; });
+  } else {
+    iSection.style.display = 'none';
+  }
+
+  // Quotes
+  const qSection = document.getElementById('quotesSection');
+  const qCards = document.getElementById('quoteCards');
+  qCards.innerHTML = '';
+  if (data.quotes && data.quotes.length) {
+    qSection.style.display = 'block';
+    data.quotes.forEach(q => {
+      qCards.innerHTML += `
+        <div class="quote-card">
+          <div class="quote-said">"${escapeHtml(q.quote || q.said || '')}"</div>
+          <div class="quote-suggestion">${escapeHtml(q.suggestion)}</div>
+        </div>`;
+    });
+  } else {
+    qSection.style.display = 'none';
+  }
+
+  // Action plan
+  const apSection = document.getElementById('actionPlanSection');
+  const apList = document.getElementById('actionPlanList');
+  apList.innerHTML = '';
+  if (data.action_plan && data.action_plan.length) {
+    apSection.style.display = 'block';
+    data.action_plan.forEach(s => { apList.innerHTML += `<li style="background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.15);color:rgba(245,158,11,.9)">${escapeHtml(s)}</li>`; });
+  } else {
+    apSection.style.display = 'none';
+  }
+
+  // Summary
+  const sumSection = document.getElementById('summarySection');
+  const sumText = document.getElementById('summaryText');
+  if (data.summary) {
+    sumSection.style.display = 'block';
+    sumText.textContent = data.summary;
+  } else {
+    sumSection.style.display = 'none';
+  }
+}
+
+function getPlaceholderFeedback() {
+  return {
+    overall_score: 7,
+    categories: [
+      { name: 'Clarity', score: 7 },
+      { name: 'Structure', score: 6 },
+      { name: 'Relevance', score: 8 },
+      { name: 'Confidence', score: 7 }
+    ],
+    strengths: ['Good use of specific examples', 'Clear communication style'],
+    improvements: ['Could structure answers with STAR method', 'Add more quantitative results'],
+    quotes: []
+  };
+}
+
+// ═══════════════════ SHARE ═══════════════════
+function shareResults() {
+  if (!feedbackData) return;
+  const rawC = feedbackData.categories || {};
+  const catArr = Array.isArray(rawC) ? rawC : Object.entries(rawC).map(([k,v])=>({name:k,score:v}));
+  const text = `AI Interview Coach Results\n` +
+    `Overall: ${feedbackData.overall_score}/10\n` +
+    catArr.map(c => `${c.name}: ${c.score}/10`).join('\n') +
+    `\n\nStrengths:\n` + (feedbackData.strengths || []).map(s => `- ${s}`).join('\n') +
+    `\n\nAreas to Improve:\n` + (feedbackData.improvements || []).map(s => `- ${s}`).join('\n');
+  navigator.clipboard.writeText(text).then(() => showToast('Results copied to clipboard!'));
+}
+
+// ═══════════════════ RESET ═══════════════════
+function resetApp() {
+  sessionId = null;
+  feedbackData = null;
+  document.getElementById('scoreRing').style.strokeDashoffset = 427.26;
+  showScreen('landing');
+}
+</script>
+</body>
+</html>
